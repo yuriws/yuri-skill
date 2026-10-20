@@ -7,11 +7,13 @@ SKILL.md，漏掉 rules.md 表格里的 3 处残留，安静污染了很久）�
 
 覆盖（全部可数，输出逐条 ✅/❌，任一失败退出码 1）：
   1. 专名清零——本书 / 测试项目专名不得出现在任何 md
-  2. 旧名词退役表——已优化掉的口径 / 术语 / 容器名必须为 0
-  3. 规则清单对账——SKILL.md 清单行数 = rules.md `## 4.` 规则条数（防断链）
-  4. 硬护栏一致——SKILL.md 尾段子句数 = rules.md 4.10 编号条数
-  5. 批尾模板唯一——模板标题只许出现在 checklist.md（单一真相源）
-  6. 脚本语法——build-merged.py 可编译
+  2. 规则清单对账——SKILL.md 清单行数 = rules.md `## 4.` 规则条数（防断链）
+  3. 硬护栏一致——SKILL.md 尾段子句数 = rules.md 4.10 编号条数
+  4. 批尾模板唯一——模板标题只许出现在 checklist.md（单一真相源）
+  5. 脚本语法——build-merged.py 可编译
+
+**已撤项**：旧名词退役表（原第 2 项，2026-10-20 撤）——「旧词回潮」归语义通读挡，
+曾回潮词表见 SKILL.md 按需加载表入口行；语义层漏抓时把本项改回来（5 分钟）。
 
 **两类失败分开报**（文案会演化，判据不会）：
   · ❌ 数据失败——内容真有问题（专名残留、对账不等、模板双写）→ 修 skill；
@@ -39,13 +41,12 @@ FAILED = []
 #      PROPER_NAMES（角色名＋书名＋地名/组织名；只替换不追加，表恒定一本书大小）。
 #      不确定表是不是本书的 → 一律当作不是，重贴（幂等）。
 # 白名单划界：仅 PROPER_NAMES 是白名单机械区（换书替换不请示）；
-#   RETIRED_TERMS / 锚点串 / 判据逻辑的任何改动都走请示——那些是治理决策。
+#   锚点串 / 判据逻辑的任何改动都走请示——那些是治理决策。
 # 专名表挡「已污染词回潮」，挡不了从未见过的新专名——新词发现靠语义通读
 #   （改 skill 后按波及文件读一遍）。
 #
 # 加词改词只动这一块，别改逻辑；判据一律「两边相等」，规则加到多少条都自适应。
 PROPER_NAMES = ["林笙", "沈燕", "沉沉", "林盛", "体操社", "安玲", "拉威尔", "召唤梦魇"]
-RETIRED_TERMS = ["速查卡", "翻案句", "第五种形态", "≥2＝该动"]
 GUARD_ANCHOR = "**硬护栏（不可协商）**："   # SKILL.md 尾部硬护栏段的锚点串
 GUARD_RULE = "## 4.10"                    # rules.md 硬护栏条目的锚点
 TEMPLATE_TITLE = "第 N 批批尾体检"         # 批尾模板标题
@@ -74,19 +75,14 @@ def main():
     check(not hits, f"{len(PROPER_NAMES)} 项 × {len(texts)} 文件，零命中",
           f"专名残留：{hits}——skill 里不许出现本书专名")
 
-    print("[2] 旧名词退役表")
-    hits = [(p, w) for p, t in texts.items() for w in RETIRED_TERMS if w in t]
-    check(not hits, f"{len(RETIRED_TERMS)} 个旧词全部退役",
-          f"旧词复活：{hits}——已优化掉的口径又出现了")
-
-    print("[3] 规则清单对账（防断链）")
+    print("[2] 规则清单对账（防断链）")
     sk, rl = texts["SKILL.md"], texts["references/rules.md"]
     n_list = len(re.findall(r"(?m)^\| 4\.", sk))
     n_rules = len(re.findall(r"(?m)^## 4\.", rl))
     check(n_list == n_rules, f"清单 {n_list} 行 = rules.md {n_rules} 条",
           f"清单 {n_list} 行 ≠ rules.md {n_rules} 条——有规则只写进了按需层，没进执行链")
 
-    print("[4] 硬护栏一致")
+    print("[3] 硬护栏一致")
     if GUARD_ANCHOR not in sk:
         anchor_fail(f"定位失败：SKILL.md 找不到锚点「{GUARD_ANCHOR}」——护栏段文案变了，更新数据区 GUARD_ANCHOR")
     elif GUARD_RULE not in rl:
@@ -98,7 +94,7 @@ def main():
         check(n_clauses == n_guard, f"SKILL.md {n_clauses} 条 = rules.md 4.10 {n_guard} 条",
               f"硬护栏不同步：SKILL.md {n_clauses} 条 vs 4.10 {n_guard} 条——抄列必然漂移，补一边就要补另一边")
 
-    print("[5] 批尾模板唯一")
+    print("[4] 批尾模板唯一")
     tpl = [(p, t.count(TEMPLATE_TITLE)) for p, t in texts.items() if TEMPLATE_TITLE in t]
     if not tpl:
         anchor_fail(f"定位失败：任何文件找不到模板标题「{TEMPLATE_TITLE}」——模板改名了，更新数据区 TEMPLATE_TITLE")
@@ -107,7 +103,7 @@ def main():
               f"唯一出处：{tpl[0][0]}",
               f"模板出现在 {len(tpl)} 处：{tpl}——单一真相源被破坏，改模板要改两遍")
 
-    print("[6] 脚本语法")
+    print("[5] 脚本语法")
     r = subprocess.run(
         [sys.executable, "-m", "py_compile", str(ROOT / "scripts" / "build-merged.py")],
         capture_output=True,

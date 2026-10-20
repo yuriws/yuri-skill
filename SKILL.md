@@ -148,7 +148,7 @@ agent_created: true
 | 文档膨胀、防 O(n²)、目录结构怎么定 | [`references/structure.md`](references/structure.md) |
 | 查历史踩坑、看哪些做法已验证 / 未验证 | [`references/pitfalls.md`](references/pitfalls.md) |
 | 拼接整合稿 / 分卷归档 | `scripts/build-merged.py` |
-| 改 skill 自身之后：专名 / 旧词 / 对账全扫（全绿才算验收过；维护约定见脚本数据区顶部） | `scripts/verify.py` |
+| 改 skill 自身之后：专名 / 对账机械全扫（全绿才算验收过；维护约定见脚本数据区顶部）＋语义通读顺手核旧词回潮（曾回潮：速查卡 / 翻案句 / 第五种形态 / ≥2＝该动） | `scripts/verify.py` |
 
 ### rules.md 规则清单（防断链：新增规则必须同步加行）
 
