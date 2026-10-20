@@ -50,10 +50,11 @@ def build_merged(chapters):
     sources = vols if vols else chapters
 
     parts = [p.read_text(encoding="utf-8").strip() for p in sources]
+    # 章标题格式以 init.md 规定为准：## 第NN章《标题》（本正则只提取章号数字）
     numbers = [
         m.group(1)
         for p in sources
-        for m in re.finditer(r"^# 第 (\d+) 章", p.read_text(encoding="utf-8"), re.M)
+        for m in re.finditer(r"^## 第(\d+)章", p.read_text(encoding="utf-8"), re.M)
     ]
     first, last = (numbers[0], numbers[-1]) if numbers else ("???", "???")
     out = text / f"merged-{first}-{last}.md"
