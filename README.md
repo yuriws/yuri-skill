@@ -14,7 +14,7 @@
 
 ### 方式一：直接把地址给AI让它帮忙安装（推荐）
 
-帮我安装这个skill：https://github.com/yuriws/yuri-skill/tree/main，直接发这句话给AI
+帮我安装这个skill：<https://github.com/yuriws/yuri-skill/tree/main>，直接发这句话给AI
 
 之后AI可能会问安装到那个目录
 
