@@ -40,6 +40,9 @@
 
 积分获取：<https://mp.weixin.qq.com/s/T25j2JW8ufaTBRhZDd5DUg>（新人注册送+成长计划任务+每日签到，基本上能有4000多积分改完千章的文章没问题）
 
+### 怎么更新
+如果看时间有最新的更新，想要拉最新的skill，可以直接给ai说：拉取最新的<https://github.com/yuriws/yuri-skill/tree/main>库的内容更新，就行了。可以先让ai列出更新了什么内容，然后选择加入。
+
 ---
 
 ## 首次使用前要准备什么
