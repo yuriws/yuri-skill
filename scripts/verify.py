@@ -7,10 +7,13 @@ SKILL.md，漏掉 rules.md 表格里的 3 处残留，安静污染了很久）�
 
 覆盖（全部可数，输出逐条 ✅/❌，任一失败退出码 1）：
   1. 专名清零——本书 / 测试项目专名不得出现在任何 md
-  2. 规则清单对账——SKILL.md 清单行数 = rules.md `## 4.` 规则条数（防断链）
-  3. 硬护栏一致——SKILL.md 尾段子句数 = rules.md 4.10 编号条数
-  4. 批尾模板唯一——模板标题只许出现在 checklist.md（单一真相源）
-  5. 脚本语法——build-merged.py 可编译
+  2. 规则清单对账——规则 ID 集合相等，且两边均无重复 ID
+  3. 硬护栏一致——逐条比较规范化文字（忽略强调、空白、句末标点）
+  4. 批尾模板唯一——实际模板标题恰好一次，且在 checklist.md
+  5. 本地 Markdown 链接——内联链接及引用定义的文件目标存在
+  6. 脚本语法——scripts/*.py 内存编译，不产生 __pycache__
+
+仅做机械检查：不验证改写语义、角色设定、授权或远程链接内容；本地链接不核对片段锚点。
 
 **两类失败分开报**（文案会演化，判据不会）：
   · ❌ 数据失败——内容真有问题（专名残留、对账不等、模板双写）→ 修 skill；
@@ -23,8 +26,9 @@ SKILL.md，漏掉 rules.md 表格里的 3 处残留，安静污染了很久）�
 
 import pathlib
 import re
-import subprocess
 import sys
+from collections import Counter
+from urllib.parse import unquote, urlsplit
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FAILED = []
@@ -62,10 +66,40 @@ def anchor_fail(msg):
     FAILED.append(msg)
 
 
+def normalize_guard(value):
+    """保留措辞与内部标点，仅消除 Markdown 强调、空白、句末标点。"""
+    return re.sub(r"\s+", "", re.sub(r"[*_`]", "", value)).rstrip("。.;；")
+
+
+def numbered_paragraphs(section):
+    return [match.group(1).strip() for match in re.finditer(
+        r"(?ms)^\d+\.[ \t]+(.*?)(?=^\d+\.[ \t]+|^\s*$|\Z)", section)]
+
+
+def local_link_failures(texts):
+    """检查常见内联链接/图片与引用定义；代码示例、外部 URL 和页内片段不检查。"""
+    failures = []
+    for name, content in texts.items():
+        content = re.sub(r"(?ms)^([`~]{3,})[^\n]*\n.*?^\1[ \t]*$", "", content)
+        content = re.sub(r"(`+).*?\1", "", content)
+        inline = re.findall(r"\[[^\]\n]*\]\(\s*(<[^>]+>|(?:\\.|[^()\s]|\([^()\n]*\))+)(?:\s+[^\n]*?)?\s*\)", content)
+        defined = re.findall(r"(?m)^\s{0,3}\[[^\]\n]+\]:\s*(<[^>]+>|\S+)", content)
+        for target in inline + defined:
+            target = target.strip("<>")
+            parsed = urlsplit(target)
+            if parsed.scheme or parsed.netloc or not parsed.path:
+                continue
+            relative = unquote(parsed.path)
+            if not (ROOT / name).parent.joinpath(relative).exists():
+                failures.append((name, target))
+    return failures
+
+
 def main():
-    files = [ROOT / "SKILL.md"] + sorted((ROOT / "references").glob("*.md"))
+    FAILED.clear()
+    files = [ROOT / "SKILL.md"] + sorted((ROOT / "references").rglob("*.md"))
     texts = {f.relative_to(ROOT).as_posix(): f.read_text(encoding="utf-8") for f in files}
-    print(f"verify：{len(texts)} 个文件（SKILL.md + references/*.md）")
+    print(f"verify：{len(texts)} 个文件（SKILL.md + references/**/*.md）；仅机械检查")
 
     print("[1] 专名清零")
     hits = [(p, n) for p, t in texts.items() for n in PROPER_NAMES if n in t]
@@ -74,39 +108,55 @@ def main():
 
     print("[2] 规则清单对账（防断链）")
     sk, rl = texts["SKILL.md"], texts["references/rules.md"]
-    n_list = len(re.findall(r"(?m)^\| 4\.", sk))
-    n_rules = len(re.findall(r"(?m)^## 4\.", rl))
-    check(n_list == n_rules, f"清单 {n_list} 行 = rules.md {n_rules} 条",
-          f"清单 {n_list} 行 ≠ rules.md {n_rules} 条——有规则只写进了按需层，没进执行链")
+    listed = re.findall(r"(?m)^\|\s*(4\.[0-9]+[a-z]*)\s*\|", sk)
+    rules = re.findall(r"(?m)^##\s+(4\.[0-9]+[a-z]*)(?=\s|$)", rl)
+    duplicates = {side: [rule for rule, count in Counter(ids).items() if count > 1]
+                  for side, ids in (("SKILL.md", listed), ("rules.md", rules))}
+    check(bool(listed) and bool(rules) and set(listed) == set(rules)
+          and not any(duplicates.values()),
+          f"规则 ID 集合一致，{len(rules)} 条，均无重复",
+          f"规则 ID 不一致或重复：仅清单 {sorted(set(listed) - set(rules))}；"
+          f"仅规则 {sorted(set(rules) - set(listed))}；重复 {duplicates}")
 
     print("[3] 硬护栏一致")
     if GUARD_ANCHOR not in sk:
         anchor_fail(f"定位失败：SKILL.md 找不到锚点「{GUARD_ANCHOR}」——护栏段文案变了，更新数据区 GUARD_ANCHOR")
-    elif GUARD_RULE not in rl:
+    elif not re.search(r"(?m)^" + re.escape(GUARD_RULE) + r"(?=\s|$)", rl):
         anchor_fail(f"定位失败：rules.md 找不到「{GUARD_RULE}」——硬护栏条目改名了，更新数据区 GUARD_RULE")
     else:
-        seg = sk.split(GUARD_ANCHOR)[-1]
-        n_clauses = seg.count("；") + 1
-        n_guard = len(re.findall(r"(?m)^\d+\. ", rl.split(GUARD_RULE)[-1]))
-        check(n_clauses == n_guard, f"SKILL.md {n_clauses} 条 = rules.md 4.10 {n_guard} 条",
-              f"硬护栏不同步：SKILL.md {n_clauses} 条 vs 4.10 {n_guard} 条——抄列必然漂移，补一边就要补另一边")
+        seg = sk.split(GUARD_ANCHOR, 1)[1].splitlines()[0]
+        section = re.search(r"(?ms)^" + re.escape(GUARD_RULE)
+                            + r"(?=\s|$)[^\n]*\n(.*?)(?=^## |\Z)", rl)
+        clauses = [normalize_guard(clause) for clause in seg.split("；")]
+        guards = [normalize_guard(guard) for guard in numbered_paragraphs(section[1])] if section else []
+        check(sk.count(GUARD_ANCHOR) == 1 and bool(guards) and all(clauses) and clauses == guards,
+              f"{len(guards)} 条硬护栏规范化文字逐条一致",
+              f"硬护栏文字不同步或锚点重复：SKILL.md {clauses}；4.10 {guards}")
 
     print("[4] 批尾模板唯一")
-    tpl = [(p, t.count(TEMPLATE_TITLE)) for p, t in texts.items() if TEMPLATE_TITLE in t]
+    pattern = r"(?m)^#{1,6}[ \t]+" + re.escape(TEMPLATE_TITLE) + r"(?=[ \t（(·]|$)[^\n]*$"
+    tpl = [(p, len(re.findall(pattern, t))) for p, t in texts.items() if re.search(pattern, t)]
     if not tpl:
         anchor_fail(f"定位失败：任何文件找不到模板标题「{TEMPLATE_TITLE}」——模板改名了，更新数据区 TEMPLATE_TITLE")
     else:
-        check(len(tpl) == 1 and tpl[0][0] == TEMPLATE_FILE,
+        check(tpl == [(TEMPLATE_FILE, 1)],
               f"唯一出处：{tpl[0][0]}",
               f"模板出现在 {len(tpl)} 处：{tpl}——单一真相源被破坏，改模板要改两遍")
 
-    print("[5] 脚本语法")
-    r = subprocess.run(
-        [sys.executable, "-m", "py_compile", str(ROOT / "scripts" / "build-merged.py")],
-        capture_output=True,
-    )
-    check(r.returncode == 0, "build-merged.py 编译通过",
-          f"build-merged.py 编译失败：{r.stderr.decode('utf-8', 'replace')[:200]}")
+    print("[5] 本地 Markdown 链接文件存在")
+    broken = local_link_failures(texts)
+    check(not broken, "本地链接目标存在（不检查锚点与远程内容）", f"本地链接失效：{broken}")
+
+    print("[6] 脚本语法（内存编译）")
+    syntax_errors = []
+    scripts = sorted((ROOT / "scripts").glob("*.py"))
+    for path in scripts:
+        try:
+            compile(path.read_text(encoding="utf-8-sig"), str(path), "exec")
+        except (SyntaxError, UnicodeError, OSError) as error:
+            syntax_errors.append((path.name, str(error)))
+    check(not syntax_errors, f"{len(scripts)} 个脚本编译通过，未写入字节码",
+          f"脚本编译失败：{syntax_errors}")
 
     if FAILED:
         print(f"\n结果：{len(FAILED)} 项未过——逐项修完重跑，全绿才算验收通过。")
