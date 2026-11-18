@@ -1,6 +1,6 @@
 # 换电脑、换会话与按批接续
 
-本说明中的skill路径都相对实际安装目录，项目路径都相对用户当前打开的小说项目。不得照抄原作者电脑的盘符、用户名或代理配置。当前执行记忆版本及验证范围以[execution-memory.md](execution-memory.md)为准；m12尚未证明稳定执行。
+本说明中的skill路径都相对实际安装目录，项目路径都相对用户当前打开的小说项目。不得照抄原作者电脑的盘符、用户名或代理配置。当前执行记忆版本及验证范围以[execution-memory.md](execution-memory.md)为准；m13尚未证明稳定执行。
 
 ## 换电脑准备
 
@@ -50,7 +50,7 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.workbuddy\skills" |
 git clone --branch main https://github.com/yuriws/yuri-skill.git "$env:USERPROFILE\.workbuddy\skills\novel-gender-swap"
 ```
 
-已有Git安装先检查`git status --short`，工作区干净时再`git pull --ff-only`；有本地修改先核对并保留，不使用强制覆盖来更新。`r6`和`m12`标识相同也可能含后续澄清，复现具体安装状态还需记录实际提交。
+已有Git安装先检查`git status --short`，工作区干净时再`git pull --ff-only`；有本地修改先核对并保留，不使用强制覆盖来更新。`r6`和`m13`标识相同也可能含后续澄清，复现具体安装状态还需记录实际提交。
 
 ### 新小说：开独立项目并初始化
 
@@ -100,7 +100,7 @@ git clone --branch main https://github.com/yuriws/yuri-skill.git "$env:USERPROFI
 保存后单独重读正文，再按主要人物记行为与具体女性形象的分别效果、实际章号及短引文、补写实际效果、候选处理、剩余问题和未检查范围。机械结果不替代语义及文学验收。沿用本书批注和进度入口，不自动提交或推送Git。
 ```
 
-当前m12仍是待验收试用版，报出版本或读过文件不等于执行通过。候选问题按实际正文处置，不为达到“全部通过”的总结隐瞒剩余。
+当前m13仍是待验收试用版，报出版本或读过文件不等于执行通过。候选问题按实际正文处置，不为达到“全部通过”的总结隐瞒剩余。
 
 ## 同会话接下一批
 
